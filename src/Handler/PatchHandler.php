@@ -11,6 +11,7 @@ use Tusk\ShouldNotHappen;
 use Tusk\Storage\Storage;
 use Tusk\Tusk;
 use Webmozart\Assert\Assert;
+use Swoole\Http\Request as SwooleHttpRequest;
 
 final class PatchHandler
 {
@@ -50,9 +51,12 @@ final class PatchHandler
         Assert::resource($body);
 
         $source = $request->getBody()->detach();
-        Assert::resource($source);
-
-        stream_copy_to_stream($source, $body);
+        if ($source instanceof SwooleHttpRequest) {
+            fwrite($body, $source->getContent());
+        } else {
+            Assert::resource($source);
+            stream_copy_to_stream($source, $body);
+        }
         rewind($body);
 
         $stat = fstat($body);

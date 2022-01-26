@@ -82,7 +82,7 @@ final class PatchHandler
                 $metadata = $this->storage->getMetaData($id);
                 $headers = [];
                 foreach ($request->getHeaders() as $headerName => $headerValues) {
-                    $headers[$headerName] = str_starts_with(strtolower(end($values)), 'x-medialib-');
+                    $headers[$headerName] = str_starts_with(strtolower(end($headerValues)), 'x-medialib-');
                 }
                 $this->storage->complete($id);
                 $this->eventDispatcher->dispatch(new UploadComplete(

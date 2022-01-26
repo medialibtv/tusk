@@ -45,7 +45,8 @@ final class PatchHandler
             return $response->withStatus(415);
         }
 
-        set_error_handler(static function () {});
+        set_error_handler(static function () {
+        });
         $body = fopen('php://temp', 'w+');
         restore_error_handler();
         Assert::resource($body);
@@ -64,7 +65,7 @@ final class PatchHandler
 
         $size = $stat['size'];
 
-        $clientOffset = (int) $request->getHeaderLine('Upload-Offset');
+        $clientOffset = (int)$request->getHeaderLine('Upload-Offset');
 
         try {
             $currentOffset = $this->storage->getOffset($id);
@@ -78,8 +79,18 @@ final class PatchHandler
             $length = $this->storage->getLength($id);
 
             if ($length === $newOffset) {
+                $metadata = $this->storage->getMetaData($id);
+                $headers = [];
+                foreach ($request->getHeaders() as $headerName => $headerValues) {
+                    $headers[$headerName] = str_starts_with(strtolower(end($values)), 'x-medialib-');
+                }
                 $this->storage->complete($id);
-                $this->eventDispatcher->dispatch(new UploadComplete($id));
+                $this->eventDispatcher->dispatch(new UploadComplete(
+                    $id,
+                    $length,
+                    $metadata,
+                    $headers
+                ));
             }
         } catch (FileNotFound $e) {
             return $response->withStatus(404);
@@ -92,8 +103,7 @@ final class PatchHandler
         }
 
         return $response
-            ->withHeader('Upload-Offset', (string) $newOffset)
-            ->withStatus(204)
-        ;
+            ->withHeader('Upload-Offset', (string)$newOffset)
+            ->withStatus(204);
     }
 }
